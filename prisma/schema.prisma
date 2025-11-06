@@ -1,0 +1,103 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String    @id @default(uuid())
+  name         String?
+  email        String    @unique
+  phone        String?
+  passwordHash String
+  role         UserRole  @default(USER)
+  bookings     Booking[]
+  payments     Payment[]
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model Vehicle {
+  id         String         @id @default(uuid())
+  title      String
+  make       String?
+  model      String?
+  year       Int?
+  category   String?
+  seats      Int
+  transmission String
+  fuelType   String
+  location   String
+  dailyPrice Int
+  images     VehicleImage[]
+  status     VehicleStatus @default(AVAILABLE)
+  bookings   Booking[]
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+}
+
+model VehicleImage {
+  id        String  @id @default(uuid())
+  vehicle   Vehicle @relation(fields: [vehicleId], references: [id])
+  vehicleId String
+  url       String
+  order     Int     @default(0)
+}
+
+model Booking {
+  id             String       @id @default(uuid())
+  user           User         @relation(fields: [userId], references: [id])
+  userId         String
+  vehicle        Vehicle      @relation(fields: [vehicleId], references: [id])
+  vehicleId      String
+  pickupLocation String
+  returnLocation String
+  pickupAt       DateTime
+  returnAt       DateTime
+  totalPrice     Int
+  status         BookingStatus @default(PENDING)
+  paymentStatus  PaymentStatus  @default(PENDING)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+}
+
+model Payment {
+  id                String   @id @default(uuid())
+  booking           Booking? @relation(fields: [bookingId], references: [id])
+  bookingId         String?
+  provider          String
+  providerPaymentId String?
+  amount            Int
+  currency          String   @default("KES")
+  status            PaymentStatus @default(PENDING)
+  rawResponse       Json?
+  createdAt         DateTime @default(now())
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum VehicleStatus {
+  AVAILABLE
+  MAINTENANCE
+  UNAVAILABLE
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
