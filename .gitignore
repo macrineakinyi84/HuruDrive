@@ -1,1 +1,10 @@
 .env
+..env
+node_modules/
+prisma/dev-test.db
+prisma/migrations/
+prisma/schema.prisma.bak*
+..gitignore.bak
+..env.bak
+node_modules/.prisma/
+node_modules/.cache/
