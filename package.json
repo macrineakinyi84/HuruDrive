@@ -3,28 +3,41 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "vite",
-    "server": "nodemon server.js",
-    "dev:all": "concurrently \"npm run server\" \"vite\"",
-    "start": "vite preview",
-    "seed": "node prisma/seed.js"
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "dev:server": "nodemon server.js",
+    "dev:client": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "start": "node server.js",
+    "prisma:studio": "prisma studio",
+    "prisma:migrate": "prisma migrate dev --name init",
+    "prisma:generate": "prisma generate",
+    "prisma:seed": "node prisma/seed.js",
+    "check-admin-password": "node check-password.js",
+    "update-admin-password": "node update-password.js",
+    "test:notifications": "node test-notifications.js"
   },
   "dependencies": {
-    "@prisma/client": "^6.19.0",
+    "@prisma/client": "^5.8.0",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.5",
-    "dotenv": "^17.2.3",
-    "express": "^5.1.0",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "dotenv": "^16.1.4",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.0",
+    "multer": "^2.0.2",
+    "nodemailer": "^7.0.12",
+    "prisma": "^5.8.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^7.12.0"
   },
   "devDependencies": {
-    "@vitejs/plugin-react": "^4.0.0",
-    "autoprefixer": "^10.4.14",
-    "concurrently": "^9.2.1",
-    "nodemon": "^3.1.10",
-    "postcss": "^8.4.24",
-    "tailwindcss": "^3.4.8",
-    "vite": "^6.4.1"
+    "@vitejs/plugin-react": "^5.0.0",
+    "autoprefixer": "^10.4.20",
+    "concurrently": "^9.0.0",
+    "nodemon": "^3.0.1",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.15",
+    "vite": "^6.0.0"
   }
 }

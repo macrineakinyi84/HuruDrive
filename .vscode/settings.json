@@ -1,0 +1,66 @@
+{
+  "files.exclude": {
+    // Hide ALL documentation files for clean presentation in VS Code
+    // Note: These files are still accessible in Cursor IDE
+    "**/*.md": true,
+    "**/HOW_TO_*.md": true,
+    "**/*_FIX*.md": true,
+    "**/*_GUIDE*.md": true,
+    "**/*_SETUP*.md": true,
+    "**/*_STATUS*.md": true,
+    "**/*_REPORT*.md": true,
+    "**/TROUBLESHOOTING.md": true,
+    "**/NAVIGATION_*.md": true,
+    "**/ALL_FEATURES_*.md": true,
+    "**/FEATURES_*.md": true,
+    "**/SIMPLE_*.md": true,
+    "**/FIX_*.md": true,
+    "**/FIXED_*.md": true,
+    "**/VITE_*.md": true,
+    "**/RESTART_*.md": true,
+    "**/START_*.md": true,
+    "**/RUNNING_*.md": true,
+    "**/RESET_*.md": true,
+    "**/FIND_*.md": true,
+    "**/setup-*.md": true,
+    "**/INSTALL_*.md": true,
+    "**/POSTGRESQL_*.md": true,
+    "**/QUICK_*.md": true,
+    "**/SYSTEM_*.md": true,
+    "**/ADD_*.md": true,
+    "**/IMAGE_*.md": true,
+    "**/CUSTOMIZATION.md": true,
+    "**/PROJECT_DOCUMENTATION.md": true,
+    "**/ALL_DIAGRAM_GUIDES.md": true,
+    "**/VSCODE_FILE_ACCESS.md": true,
+    // Hide utility scripts
+    "**/check-password.js": true,
+    "**/update-password.js": true,
+    "**/test-connection.js": true,
+    "**/test-prisma.js": true,
+    "**/test-notifications.js": true,
+    "**/create-image-placeholders.js": true,
+    "**/update-images-to-local.js": true,
+    "**/update-with-better-images.js": true,
+    "**/download-car-images.js": true,
+    "**/download-specific-car-images.js": true,
+    "**/create-placeholder-images.html": true,
+    "**/*.ps1": true,
+    "**/hurudrive_dev_dump.sql": true,
+    "**/HuruDrive": true
+  },
+  "search.exclude": {
+    "**/*.md": true,
+    "**/node_modules": true,
+    "**/.git": true
+  },
+  "files.watcherExclude": {
+    "**/*.md": true,
+    "**/node_modules/**": true
+  },
+  // Only show relevant source code files for presentation
+  "files.associations": {
+    "*.jsx": "javascriptreact",
+    "*.js": "javascript"
+  }
+}

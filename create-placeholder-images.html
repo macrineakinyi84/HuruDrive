@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Generate Placeholder Images</title>
+</head>
+<body>
+    <h1>Vehicle Placeholder Images</h1>
+    <p>Right-click each image and "Save image as..." to save them.</p>
+    <p>Save them to: C:\Users\Awuor\HuruDrive\public\images\vehicles\</p>
+    
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; padding: 20px;">
+        <!-- We'll use SVG placeholders instead -->
+    </div>
+    
+    <script>
+        const vehicles = [
+            { name: 'Toyota Land Cruiser Prado', color: '#1a1a1a' },
+            { name: 'Nissan X-Trail', color: '#2c3e50' },
+            { name: 'Mitsubishi Pajero', color: '#34495e' },
+            { name: 'Toyota Camry', color: '#3498db' },
+            { name: 'Honda Accord', color: '#e74c3c' },
+            { name: 'Toyota Prius', color: '#27ae60' },
+            { name: 'Toyota Hilux', color: '#f39c12' },
+            { name: 'Isuzu D-Max', color: '#e67e22' },
+            { name: 'Nissan Note', color: '#9b59b6' },
+            { name: 'Toyota Vitz', color: '#16a085' }
+        ];
+        
+        vehicles.forEach((vehicle, index) => {
+            const canvas = document.createElement('canvas');
+            canvas.width = 600;
+            canvas.height = 400;
+            const ctx = canvas.getContext('2d');
+            
+            // Background
+            ctx.fillStyle = vehicle.color;
+            ctx.fillRect(0, 0, 600, 400);
+            
+            // Text
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 32px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(vehicle.name, 300, 200);
+            
+            // Convert to image
+            const img = document.createElement('img');
+            img.src = canvas.toDataURL('image/png');
+            img.style.width = '200px';
+            img.style.border = '1px solid #ccc';
+            img.download = vehicle.name.replace(/\s+/g, '-').toLowerCase() + '.png';
+            
+            const div = document.createElement('div');
+            div.innerHTML = `<p>${vehicle.name}</p>`;
+            div.appendChild(img);
+            document.querySelector('div').appendChild(div);
+        });
+    </script>
+</body>
+</html>

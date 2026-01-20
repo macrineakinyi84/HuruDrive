@@ -1,53 +1,82 @@
 import React, { useEffect, useState } from 'react';
+import CarCard from './CarCard';
 
-export default function CarsGrid() {
-  const [vehicles, setVehicles] = useState(null);
+export default function CarsGrid({ filters = {} }) {
+  const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [err, setErr] = useState(null);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetch('/api/vehicles')
+    setLoading(true);
+    setError(null);
+
+    // Build query string from filters
+    const params = new URLSearchParams();
+    if (filters.location) params.append('location', filters.location);
+    if (filters.make) params.append('make', filters.make);
+    if (filters.category) params.append('category', filters.category);
+    if (filters.minSeats) params.append('minSeats', filters.minSeats);
+    if (filters.minPrice) params.append('minPrice', filters.minPrice);
+    if (filters.maxPrice) params.append('maxPrice', filters.maxPrice);
+
+    const queryString = params.toString();
+    const url = `/api/vehicles${queryString ? `?${queryString}` : ''}`;
+
+    fetch(url)
       .then((r) => {
-        if (!r.ok) throw new Error(`Status ${r.status}`);
+        if (!r.ok) throw new Error(`Failed to load vehicles: ${r.status}`);
         return r.json();
       })
       .then((data) => {
-        // API may return vehicleImages fallback object; normalize it
         if (Array.isArray(data)) {
           setVehicles(data);
-        } else if (data.vehicleImages) {
-          setVehicles([]); // vehicle list missing, but images exist
-          // optional: map images back to vehicles if needed
         } else {
           setVehicles([]);
         }
       })
       .catch((e) => {
-        console.error('fetch /api/vehicles failed', e);
-        setErr(e.message);
+        console.error('Error fetching vehicles:', e);
+        setError(e.message);
       })
       .finally(() => setLoading(false));
-  }, []);
+  }, [filters.location, filters.make, filters.category, filters.minSeats, filters.minPrice, filters.maxPrice]);
 
-  if (loading) return <div>Loading…</div>;
-  if (err) return <div className="text-red-600">Error: {err}</div>;
-  if (!vehicles || !vehicles.length) return <div>No vehicles found</div>;
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600 mb-4"></div>
+          <p className="text-gray-600">Loading vehicles...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-lg p-4 my-8">
+        <p className="text-red-800 font-semibold mb-2">Error loading vehicles</p>
+        <p className="text-red-600 text-sm">{error}</p>
+      </div>
+    );
+  }
+
+  if (!vehicles || vehicles.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-gray-600 text-lg mb-2">No vehicles found</p>
+        <p className="text-gray-500 text-sm">Try adjusting your search filters</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      {vehicles.map((v) => (
-        <div key={v.id} className="border p-3 rounded">
-          <h3 className="font-bold">{v.make ?? v.brand ?? 'Unknown' } {v.model ?? ''}</h3>
-          <p>{v.year ?? ''}</p>
-          { (v.images && v.images.length > 0) || (v.vehicleImages && v.vehicleImages.length > 0) ? (
-            <img
-              src={(v.images && v.images[0]?.url) ?? (v.vehicleImages && v.vehicleImages[0]?.url)}
-              alt=""
-              className="w-full h-48 object-cover mt-2"
-            />
-          ) : null }
-        </div>
-      ))}
+    <div className="py-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {vehicles.map((vehicle) => (
+          <CarCard key={vehicle.id} vehicle={vehicle} />
+        ))}
+      </div>
     </div>
   );
 }
