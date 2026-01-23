@@ -123,7 +123,7 @@ app.get('/api/vehicles', async (req, res) => {
       where,
       orderBy: { createdAt: 'desc' },
       include: {
-        images: {
+        VehicleImage: {
           orderBy: { order: 'asc' }
         }
       }
@@ -148,10 +148,10 @@ app.get('/api/vehicles/:id', async (req, res) => {
     const vehicle = await prisma.vehicle.findUnique({
       where: { id },
       include: {
-        images: {
+        VehicleImage: {
           orderBy: { order: 'asc' }
         },
-        bookings: true
+        Booking: true
       }
     });
 
@@ -475,6 +475,7 @@ app.post('/api/bookings', async (req, res) => {
     // Create booking
     const booking = await prisma.booking.create({
       data: {
+        id: require('crypto').randomUUID(),
         userId: decoded.userId,
         vehicleId,
         pickupLocation,
@@ -483,17 +484,18 @@ app.post('/api/bookings', async (req, res) => {
         returnAt: new Date(returnAt),
         totalPrice,
         status: 'PENDING',
-        paymentStatus: 'PENDING'
+        paymentStatus: 'PENDING',
+        updatedAt: new Date()
       },
       include: {
-        user: true,
-        vehicle: true
+        User: true,
+        Vehicle: true
       }
     });
 
     // Send booking confirmation (email and SMS)
     try {
-      await sendBookingConfirmation(booking, booking.user, booking.vehicle);
+      await sendBookingConfirmation(booking, booking.User, booking.Vehicle);
     } catch (notifError) {
       console.error('Notification error (non-critical):', notifError);
       // Don't fail the booking if notification fails
@@ -503,7 +505,8 @@ app.post('/api/bookings', async (req, res) => {
       message: 'Booking created successfully',
       booking: {
         id: booking.id,
-        vehicle: booking.vehicle,
+        vehicle: booking.Vehicle,
+        user: booking.User,
         pickupLocation: booking.pickupLocation,
         returnLocation: booking.returnLocation,
         pickupAt: booking.pickupAt,
@@ -543,8 +546,8 @@ app.post('/api/payments', async (req, res) => {
     const booking = await prisma.booking.findUnique({
       where: { id: bookingId },
       include: {
-        user: true,
-        vehicle: true
+        User: true,
+        Vehicle: true
       }
     });
 
@@ -556,13 +559,29 @@ app.post('/api/payments', async (req, res) => {
       return res.status(403).json({ error: 'Unauthorized' });
     }
 
+    // Check if payment already exists for this booking
+    const existingPayment = await prisma.payment.findUnique({
+      where: { bookingId }
+    });
+
+    if (existingPayment) {
+      return res.status(400).json({ error: 'Payment already processed for this booking' });
+    }
+
+    // Validate amount is a positive number
+    const amountInt = parseInt(amount);
+    if (isNaN(amountInt) || amountInt <= 0) {
+      return res.status(400).json({ error: 'Invalid amount' });
+    }
+
     // Create payment record
     const payment = await prisma.payment.create({
       data: {
+        id: require('crypto').randomUUID(),
         bookingId,
         userId: decoded.userId,
         provider,
-        amount,
+        amount: amountInt,
         currency: 'KES',
         status: 'PAID' // In production, verify payment first
       }
@@ -579,7 +598,7 @@ app.post('/api/payments', async (req, res) => {
 
     // Send payment confirmation (email and SMS)
     try {
-      await sendPaymentConfirmation(payment, booking, booking.user, booking.vehicle);
+      await sendPaymentConfirmation(payment, booking, booking.User, booking.Vehicle);
     } catch (notifError) {
       console.error('Notification error (non-critical):', notifError);
       // Don't fail the payment if notification fails
@@ -601,10 +620,15 @@ app.post('/api/payments', async (req, res) => {
     });
   } catch (err) {
     console.error('Error processing payment:', err);
+    console.error('Error details:', err.message, err.stack);
     if (err.name === 'JsonWebTokenError') {
       return res.status(401).json({ error: 'Invalid token' });
     }
-    res.status(500).json({ error: 'Failed to process payment' });
+    // Return more detailed error message
+    res.status(500).json({ 
+      error: 'Failed to process payment',
+      details: err.message 
+    });
   }
 });
 
@@ -797,12 +821,12 @@ app.get('/api/admin/feedback', authenticateToken, requireAdmin, async (req, res)
       prisma.feedback.findMany({
         where,
         include: {
-          user: {
+          User: {
             select: { id: true, name: true, email: true }
           },
-          booking: {
+          Booking: {
             include: {
-              vehicle: {
+              Vehicle: {
                 select: { id: true, title: true }
               }
             }
@@ -926,16 +950,16 @@ app.get('/api/user/bookings', authenticateToken, async (req, res) => {
     const bookings = await prisma.booking.findMany({
       where,
       include: {
-        vehicle: {
+        Vehicle: {
           include: {
-            images: {
+            VehicleImage: {
               take: 1,
               orderBy: { order: 'asc' }
             }
           }
         },
-        payment: true,
-        feedbacks: true
+        Payment: true,
+        Feedback: true
       },
       orderBy: { createdAt: 'desc' }
     });
@@ -957,15 +981,15 @@ app.get('/api/user/bookings/:id', authenticateToken, async (req, res) => {
         userId: req.user.userId
       },
       include: {
-        vehicle: {
+        Vehicle: {
           include: {
-            images: {
+            VehicleImage: {
               orderBy: { order: 'asc' }
             }
           }
         },
-        payment: true,
-        feedbacks: true
+        Payment: true,
+        Feedback: true
       }
     });
 
@@ -1007,7 +1031,7 @@ app.patch('/api/user/bookings/:id/cancel', authenticateToken, async (req, res) =
       where: { id },
       data: { status: 'CANCELLED' },
       include: {
-        vehicle: true
+        Vehicle: true
       }
     });
 
@@ -1024,9 +1048,9 @@ app.get('/api/user/payments', authenticateToken, async (req, res) => {
     const payments = await prisma.payment.findMany({
       where: { userId: req.user.userId },
       include: {
-        booking: {
+        Booking: {
           include: {
-            vehicle: {
+            Vehicle: {
               select: { id: true, title: true, make: true, model: true }
             }
           }
@@ -1078,8 +1102,8 @@ app.get('/api/user/stats', authenticateToken, async (req, res) => {
       prisma.booking.findMany({
         where: { userId },
         include: {
-          vehicle: {
-            select: { id: true, title: true, images: { take: 1 } }
+          Vehicle: {
+            select: { id: true, title: true, VehicleImage: { take: 1 } }
           }
         },
         orderBy: { createdAt: 'desc' },

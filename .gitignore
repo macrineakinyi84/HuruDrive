@@ -49,6 +49,14 @@ setup-db-simple.ps1
 setup-postgresql.ps1
 reset-postgres-password.ps1
 update-env.ps1
+check-all-images.js
+check-vehicles.js
+create-admin-user.js
+fix-missing-images.js
+update-car-photos.js
+update-vehicle-images.js
+verify-images.js
+seed-dashboard-data.js
 
 # Database dumps
 *.sql
