@@ -405,6 +405,31 @@ app.get('/api/auth/me', async (req, res) => {
   }
 });
 
+// Authentication middleware
+const authenticateToken = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+
+  const token = authHeader.substring(7);
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    req.user = decoded;
+    next();
+  } catch (err) {
+    return res.status(401).json({ error: 'Invalid or expired token' });
+  }
+};
+
+// Admin-only middleware
+const requireAdmin = (req, res, next) => {
+  if (req.user.role !== 'ADMIN') {
+    return res.status(403).json({ error: 'Admin access required' });
+  }
+  next();
+};
+
 // Import notification service
 const { sendBookingConfirmation, sendPaymentConfirmation } = require('./services/notificationService');
 
@@ -580,6 +605,590 @@ app.post('/api/payments', async (req, res) => {
       return res.status(401).json({ error: 'Invalid token' });
     }
     res.status(500).json({ error: 'Failed to process payment' });
+  }
+});
+
+// ==================== ADMIN ENDPOINTS ====================
+
+// Get all bookings (Admin only)
+app.get('/api/admin/bookings', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { status, startDate, endDate, page = 1, limit = 20 } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    const where = {};
+    if (status) where.status = status;
+    if (startDate || endDate) {
+      where.createdAt = {};
+      if (startDate) where.createdAt.gte = new Date(startDate);
+      if (endDate) where.createdAt.lte = new Date(endDate);
+    }
+
+    const [bookings, total] = await Promise.all([
+      prisma.booking.findMany({
+        where,
+        include: {
+          user: {
+            select: { id: true, name: true, email: true, phone: true }
+          },
+          vehicle: {
+            select: { id: true, title: true, make: true, model: true }
+          },
+          payment: true
+        },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: parseInt(limit)
+      }),
+      prisma.booking.count({ where })
+    ]);
+
+    res.json({
+      bookings,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        pages: Math.ceil(total / parseInt(limit))
+      }
+    });
+  } catch (err) {
+    console.error('Error fetching bookings:', err);
+    res.status(500).json({ error: 'Failed to fetch bookings' });
+  }
+});
+
+// Update booking status (Admin only)
+app.patch('/api/admin/bookings/:id', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!status || !['PENDING', 'CONFIRMED', 'CANCELLED', 'COMPLETED'].includes(status)) {
+      return res.status(400).json({ error: 'Invalid status' });
+    }
+
+    const booking = await prisma.booking.update({
+      where: { id },
+      data: { status },
+      include: {
+        user: true,
+        vehicle: true
+      }
+    });
+
+    res.json({ message: 'Booking updated successfully', booking });
+  } catch (err) {
+    console.error('Error updating booking:', err);
+    res.status(500).json({ error: 'Failed to update booking' });
+  }
+});
+
+// Get dashboard statistics (Admin only)
+app.get('/api/admin/stats', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+    const dateFilter = {};
+    if (startDate || endDate) {
+      dateFilter.createdAt = {};
+      if (startDate) dateFilter.createdAt.gte = new Date(startDate);
+      if (endDate) dateFilter.createdAt.lte = new Date(endDate);
+    }
+
+    const [
+      totalBookings,
+      confirmedBookings,
+      totalRevenue,
+      totalUsers,
+      totalVehicles,
+      bookingsByStatus,
+      revenueByMonth,
+      topVehicles
+    ] = await Promise.all([
+      prisma.booking.count({ where: dateFilter }),
+      prisma.booking.count({ where: { ...dateFilter, status: 'CONFIRMED' } }),
+      prisma.payment.aggregate({
+        where: { ...dateFilter, status: 'PAID' },
+        _sum: { amount: true }
+      }),
+      prisma.user.count({ where: { role: 'USER' } }),
+      prisma.vehicle.count(),
+      prisma.booking.groupBy({
+        by: ['status'],
+        where: dateFilter,
+        _count: { status: true }
+      }),
+      // Revenue by month (last 6 months)
+      prisma.payment.findMany({
+        where: {
+          ...dateFilter,
+          status: 'PAID',
+          createdAt: {
+            gte: new Date(new Date().setMonth(new Date().getMonth() - 6))
+          }
+        },
+        select: {
+          amount: true,
+          createdAt: true
+        }
+      }),
+      // Top 5 most booked vehicles
+      prisma.booking.groupBy({
+        by: ['vehicleId'],
+        where: dateFilter,
+        _count: { vehicleId: true },
+        orderBy: { _count: { vehicleId: 'desc' } },
+        take: 5
+      })
+    ]);
+
+    // Process revenue by month
+    const monthlyRevenue = {};
+    revenueByMonth.forEach(payment => {
+      const month = new Date(payment.createdAt).toISOString().slice(0, 7);
+      monthlyRevenue[month] = (monthlyRevenue[month] || 0) + payment.amount;
+    });
+
+    // Get vehicle details for top vehicles
+    const topVehicleIds = topVehicles.map(v => v.vehicleId);
+    const topVehicleDetails = await prisma.vehicle.findMany({
+      where: { id: { in: topVehicleIds } },
+      select: { id: true, title: true, make: true, model: true }
+    });
+
+    const topVehiclesWithDetails = topVehicles.map(tv => ({
+      ...tv,
+      vehicle: topVehicleDetails.find(v => v.id === tv.vehicleId)
+    }));
+
+    res.json({
+      overview: {
+        totalBookings,
+        confirmedBookings,
+        totalRevenue: totalRevenue._sum.amount || 0,
+        totalUsers,
+        totalVehicles,
+        pendingBookings: bookingsByStatus.find(b => b.status === 'PENDING')?._count.status || 0,
+        cancelledBookings: bookingsByStatus.find(b => b.status === 'CANCELLED')?._count.status || 0
+      },
+      bookingsByStatus: bookingsByStatus.map(b => ({
+        status: b.status,
+        count: b._count.status
+      })),
+      monthlyRevenue,
+      topVehicles: topVehiclesWithDetails
+    });
+  } catch (err) {
+    console.error('Error fetching stats:', err);
+    res.status(500).json({ error: 'Failed to fetch statistics' });
+  }
+});
+
+// Get all feedback (Admin only)
+app.get('/api/admin/feedback', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { status, page = 1, limit = 20 } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    const where = {};
+    if (status) where.status = status;
+
+    const [feedbacks, total] = await Promise.all([
+      prisma.feedback.findMany({
+        where,
+        include: {
+          user: {
+            select: { id: true, name: true, email: true }
+          },
+          booking: {
+            include: {
+              vehicle: {
+                select: { id: true, title: true }
+              }
+            }
+          }
+        },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: parseInt(limit)
+      }),
+      prisma.feedback.count({ where })
+    ]);
+
+    res.json({
+      feedbacks,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        pages: Math.ceil(total / parseInt(limit))
+      }
+    });
+  } catch (err) {
+    console.error('Error fetching feedback:', err);
+    res.status(500).json({ error: 'Failed to fetch feedback' });
+  }
+});
+
+// Update feedback status (Admin only)
+app.patch('/api/admin/feedback/:id', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!status || !['PENDING', 'APPROVED', 'REJECTED'].includes(status)) {
+      return res.status(400).json({ error: 'Invalid status' });
+    }
+
+    const feedback = await prisma.feedback.update({
+      where: { id },
+      data: { status },
+      include: {
+        user: true,
+        booking: true
+      }
+    });
+
+    res.json({ message: 'Feedback updated successfully', feedback });
+  } catch (err) {
+    console.error('Error updating feedback:', err);
+    res.status(500).json({ error: 'Failed to update feedback' });
+  }
+});
+
+// ==================== FEEDBACK ENDPOINTS ====================
+
+// Submit feedback (Authenticated users)
+app.post('/api/feedback', authenticateToken, async (req, res) => {
+  try {
+    const { bookingId, rating, comment } = req.body;
+
+    if (!rating || rating < 1 || rating > 5) {
+      return res.status(400).json({ error: 'Rating must be between 1 and 5' });
+    }
+
+    // Verify booking belongs to user
+    if (bookingId) {
+      const booking = await prisma.booking.findUnique({
+        where: { id: bookingId }
+      });
+
+      if (!booking) {
+        return res.status(404).json({ error: 'Booking not found' });
+      }
+
+      if (booking.userId !== req.user.userId) {
+        return res.status(403).json({ error: 'Unauthorized' });
+      }
+    }
+
+    const feedback = await prisma.feedback.create({
+      data: {
+        userId: req.user.userId,
+        bookingId: bookingId || null,
+        rating,
+        comment: comment || null,
+        status: 'PENDING'
+      },
+      include: {
+        user: {
+          select: { id: true, name: true, email: true }
+        },
+        booking: {
+          include: {
+            vehicle: {
+              select: { id: true, title: true }
+            }
+          }
+        }
+      }
+    });
+
+    res.status(201).json({
+      message: 'Feedback submitted successfully',
+      feedback
+    });
+  } catch (err) {
+    console.error('Error submitting feedback:', err);
+    res.status(500).json({ error: 'Failed to submit feedback' });
+  }
+});
+
+// ==================== USER DASHBOARD ENDPOINTS ====================
+
+// Get user's bookings
+app.get('/api/user/bookings', authenticateToken, async (req, res) => {
+  try {
+    const { status } = req.query;
+    const where = { userId: req.user.userId };
+    if (status) where.status = status;
+
+    const bookings = await prisma.booking.findMany({
+      where,
+      include: {
+        vehicle: {
+          include: {
+            images: {
+              take: 1,
+              orderBy: { order: 'asc' }
+            }
+          }
+        },
+        payment: true,
+        feedbacks: true
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    res.json({ bookings });
+  } catch (err) {
+    console.error('Error fetching user bookings:', err);
+    res.status(500).json({ error: 'Failed to fetch bookings' });
+  }
+});
+
+// Get single booking
+app.get('/api/user/bookings/:id', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const booking = await prisma.booking.findFirst({
+      where: {
+        id,
+        userId: req.user.userId
+      },
+      include: {
+        vehicle: {
+          include: {
+            images: {
+              orderBy: { order: 'asc' }
+            }
+          }
+        },
+        payment: true,
+        feedbacks: true
+      }
+    });
+
+    if (!booking) {
+      return res.status(404).json({ error: 'Booking not found' });
+    }
+
+    res.json({ booking });
+  } catch (err) {
+    console.error('Error fetching booking:', err);
+    res.status(500).json({ error: 'Failed to fetch booking' });
+  }
+});
+
+// Cancel booking
+app.patch('/api/user/bookings/:id/cancel', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const booking = await prisma.booking.findFirst({
+      where: {
+        id,
+        userId: req.user.userId
+      }
+    });
+
+    if (!booking) {
+      return res.status(404).json({ error: 'Booking not found' });
+    }
+
+    if (booking.status === 'CANCELLED') {
+      return res.status(400).json({ error: 'Booking already cancelled' });
+    }
+
+    if (booking.status === 'COMPLETED') {
+      return res.status(400).json({ error: 'Cannot cancel completed booking' });
+    }
+
+    const updated = await prisma.booking.update({
+      where: { id },
+      data: { status: 'CANCELLED' },
+      include: {
+        vehicle: true
+      }
+    });
+
+    res.json({ message: 'Booking cancelled successfully', booking: updated });
+  } catch (err) {
+    console.error('Error cancelling booking:', err);
+    res.status(500).json({ error: 'Failed to cancel booking' });
+  }
+});
+
+// Get user's payments
+app.get('/api/user/payments', authenticateToken, async (req, res) => {
+  try {
+    const payments = await prisma.payment.findMany({
+      where: { userId: req.user.userId },
+      include: {
+        booking: {
+          include: {
+            vehicle: {
+              select: { id: true, title: true, make: true, model: true }
+            }
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    res.json({ payments });
+  } catch (err) {
+    console.error('Error fetching payments:', err);
+    res.status(500).json({ error: 'Failed to fetch payments' });
+  }
+});
+
+// Get user dashboard statistics
+app.get('/api/user/stats', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+
+    const [
+      totalBookings,
+      upcomingBookings,
+      completedBookings,
+      totalSpent,
+      recentBookings
+    ] = await Promise.all([
+      prisma.booking.count({ where: { userId } }),
+      prisma.booking.count({
+        where: {
+          userId,
+          pickupAt: { gte: new Date() },
+          status: { in: ['PENDING', 'CONFIRMED'] }
+        }
+      }),
+      prisma.booking.count({
+        where: {
+          userId,
+          status: 'COMPLETED'
+        }
+      }),
+      prisma.payment.aggregate({
+        where: {
+          userId,
+          status: 'PAID'
+        },
+        _sum: { amount: true }
+      }),
+      prisma.booking.findMany({
+        where: { userId },
+        include: {
+          vehicle: {
+            select: { id: true, title: true, images: { take: 1 } }
+          }
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 5
+      })
+    ]);
+
+    res.json({
+      stats: {
+        totalBookings,
+        upcomingBookings,
+        completedBookings,
+        totalSpent: totalSpent._sum.amount || 0
+      },
+      recentBookings
+    });
+  } catch (err) {
+    console.error('Error fetching user stats:', err);
+    res.status(500).json({ error: 'Failed to fetch statistics' });
+  }
+});
+
+// Update user profile
+app.patch('/api/user/profile', authenticateToken, async (req, res) => {
+  try {
+    const { name, phone } = req.body;
+    const updateData = {};
+    if (name !== undefined) updateData.name = name;
+    if (phone !== undefined) updateData.phone = phone;
+
+    const user = await prisma.user.update({
+      where: { id: req.user.userId },
+      data: updateData,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        role: true
+      }
+    });
+
+    res.json({ message: 'Profile updated successfully', user });
+  } catch (err) {
+    console.error('Error updating profile:', err);
+    res.status(500).json({ error: 'Failed to update profile' });
+  }
+});
+
+// Change password
+app.patch('/api/user/password', authenticateToken, async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ error: 'Current and new password required' });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ error: 'New password must be at least 6 characters' });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.userId }
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const isValid = await bcrypt.compare(currentPassword, user.passwordHash);
+    if (!isValid) {
+      return res.status(401).json({ error: 'Current password is incorrect' });
+    }
+
+    const newPasswordHash = await bcrypt.hash(newPassword, 10);
+    await prisma.user.update({
+      where: { id: req.user.userId },
+      data: { passwordHash: newPasswordHash }
+    });
+
+    res.json({ message: 'Password updated successfully' });
+  } catch (err) {
+    console.error('Error changing password:', err);
+    res.status(500).json({ error: 'Failed to change password' });
+  }
+});
+
+// Get user's feedback
+app.get('/api/user/feedback', authenticateToken, async (req, res) => {
+  try {
+    const feedbacks = await prisma.feedback.findMany({
+      where: { userId: req.user.userId },
+      include: {
+        booking: {
+          include: {
+            vehicle: {
+              select: { id: true, title: true }
+            }
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    res.json({ feedbacks });
+  } catch (err) {
+    console.error('Error fetching feedback:', err);
+    res.status(500).json({ error: 'Failed to fetch feedback' });
   }
 });
 

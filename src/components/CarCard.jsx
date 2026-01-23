@@ -1,14 +1,16 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 export default function CarCard({ vehicle }) {
   const navigate = useNavigate();
+  const [imageError, setImageError] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   
   // Get the first image from the images array, or use a placeholder
   // Handle both local paths and full URLs
   const getImageUrl = (url) => {
-    if (!url) return 'https://placehold.co/600x400?text=No+Image';
-    // If it's already a full URL (like placehold.co), use it directly
+    if (!url) return 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=800&h=600&fit=crop&auto=format&q=80';
+    // If it's already a full URL (like unsplash.com), use it directly
     if (url.startsWith('http://') || url.startsWith('https://')) {
       return url;
     }
@@ -20,32 +22,54 @@ export default function CarCard({ vehicle }) {
     return `/images${url}`;
   };
 
-  const imageUrl = vehicle.images && vehicle.images.length > 0 
-    ? getImageUrl(vehicle.images[0].url)
-    : 'https://placehold.co/600x400?text=No+Image';
+  // Get all available images
+  const availableImages = vehicle.images && vehicle.images.length > 0 
+    ? vehicle.images.map(img => getImageUrl(img.url))
+    : [];
+
+  // Get current image URL with fallback
+  const imageUrl = availableImages.length > 0 
+    ? availableImages[currentImageIndex] 
+    : 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=800&h=600&fit=crop&auto=format&q=80';
 
   // Format vehicle title: use title if available, otherwise combine make + model
   const displayTitle = vehicle.title || `${vehicle.make || ''} ${vehicle.model || ''}`.trim() || 'Vehicle';
 
+  const handleImageError = (e) => {
+    console.error('Image failed to load:', imageUrl);
+    setImageError(true);
+    
+    // Try next image if available
+    if (currentImageIndex < availableImages.length - 1) {
+      setCurrentImageIndex(currentImageIndex + 1);
+      setImageError(false);
+    } else {
+      // Use fallback placeholder
+      e.target.src = 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=800&h=600&fit=crop&auto=format&q=80';
+    }
+  };
+
   return (
     <article className="bg-white rounded-xlcard border border-gray-100 overflow-hidden shadow-card hover:shadow-lg transition-shadow duration-200">
       <div className="h-48 bg-gray-200 overflow-hidden relative">
-        {imageUrl ? (
+        {imageUrl && !imageError ? (
           <img
+            key={`${vehicle.id}-${currentImageIndex}`}
             src={imageUrl}
             alt={displayTitle}
             className="w-full h-full object-cover"
-            onError={(e) => {
-              console.error('Image failed to load:', imageUrl);
-              e.target.src = 'https://via.placeholder.com/600x400/cccccc/666666?text=No+Image';
-            }}
+            onError={handleImageError}
             onLoad={() => {
-              console.log('Image loaded:', imageUrl);
+              console.log('Image loaded successfully:', imageUrl);
             }}
+            loading="lazy"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-gray-200 text-gray-400">
-            No Image
+            <div className="text-center">
+              <div className="text-4xl mb-2">🚗</div>
+              <div className="text-sm">Loading image...</div>
+            </div>
           </div>
         )}
       </div>

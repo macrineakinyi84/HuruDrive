@@ -1,8 +1,39 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
 export default function Header() {
   const navigate = useNavigate();
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
+  const checkAuth = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    try {
+      const response = await fetch('/api/auth/me', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setUser(data.user);
+      }
+    } catch (err) {
+      console.error('Auth check error:', err);
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    setUser(null);
+    navigate('/');
+  };
 
   return (
     <header className="bg-white border-b">
@@ -59,18 +90,46 @@ export default function Header() {
         </nav>
 
         <div className="flex items-center gap-3">
-          <button 
-            onClick={() => navigate('/login')}
-            className="text-sm hover:text-teal-600 transition-colors"
-          >
-            Login
-          </button>
-          <button 
-            onClick={() => navigate('/register')}
-            className="bg-dark text-white px-4 py-2 rounded-xlcard text-sm hover:bg-gray-800 transition-colors"
-          >
-            Register
-          </button>
+          {user ? (
+            <>
+              {user.role === 'ADMIN' && (
+                <Link
+                  to="/admin"
+                  className="text-sm hover:text-teal-600 transition-colors px-3 py-2 bg-teal-50 rounded-lg"
+                >
+                  Admin Dashboard
+                </Link>
+              )}
+              <Link
+                to="/dashboard"
+                className="text-sm hover:text-teal-600 transition-colors px-3 py-2 bg-gray-50 rounded-lg"
+              >
+                My Dashboard
+              </Link>
+              <span className="text-sm text-gray-600">{user.name || user.email}</span>
+              <button 
+                onClick={handleLogout}
+                className="text-sm hover:text-teal-600 transition-colors"
+              >
+                Logout
+              </button>
+            </>
+          ) : (
+            <>
+              <button 
+                onClick={() => navigate('/login')}
+                className="text-sm hover:text-teal-600 transition-colors"
+              >
+                Login
+              </button>
+              <button 
+                onClick={() => navigate('/register')}
+                className="bg-dark text-white px-4 py-2 rounded-xlcard text-sm hover:bg-gray-800 transition-colors"
+              >
+                Register
+              </button>
+            </>
+          )}
         </div>
       </div>
     </header>

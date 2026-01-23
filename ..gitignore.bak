@@ -1,0 +1,25 @@
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+package-lock.json
+
+# Env files
+.env
+.env.local
+..env
+
+# Prisma dev DB + migrations you don't want to commit
+prisma/dev-test.db
+prisma/dev-test.db-journal
+
+# Editor / OS files
+.DS_Store
+.vscode/
+.idea/
+
+# Build output, caches
+dist/
+build/
+node_modules/.cache/
+node_modules/.prisma/
