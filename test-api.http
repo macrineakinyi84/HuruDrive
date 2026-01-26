@@ -1,0 +1,90 @@
+### HuruDrive API Test File
+### Use with VS Code REST Client extension
+### Install: https://marketplace.visualstudio.com/items?itemName=humao.rest-client
+
+@baseUrl = http://localhost:3000
+@token = 
+
+### Health Check
+GET {{baseUrl}}/api/health
+
+### Get All Vehicles
+GET {{baseUrl}}/api/vehicles
+
+### Get Vehicles by Location
+GET {{baseUrl}}/api/vehicles?location=Nairobi
+
+### Get Single Vehicle
+GET {{baseUrl}}/api/vehicles/bfa2e852-388c-48cb-9f4d-c54b5c2d8049
+
+### Register User
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "name": "Test User",
+  "email": "test@example.com",
+  "phone": "0712345678",
+  "password": "password123"
+}
+
+### Login (Save token from response)
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@hurudrive.com",
+  "password": "admin123"
+}
+
+### Get Current User (Replace token)
+GET {{baseUrl}}/api/auth/me
+Authorization: Bearer {{token}}
+
+### Create Booking (Replace token and vehicleId)
+POST {{baseUrl}}/api/bookings
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "vehicleId": "bfa2e852-388c-48cb-9f4d-c54b5c2d8049",
+  "pickupLocation": "Nairobi CBD",
+  "returnLocation": "Nairobi CBD",
+  "pickupAt": "2024-01-25T10:00:00Z",
+  "returnAt": "2024-01-28T10:00:00Z"
+}
+
+### Process Payment (Replace token and bookingId)
+POST {{baseUrl}}/api/payments
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "bookingId": "713c8b76-c449-4a3d-9284-e39f66568e3b",
+  "provider": "mpesa",
+  "amount": 7875
+}
+
+### Get User Bookings (Replace token)
+GET {{baseUrl}}/api/user/bookings
+Authorization: Bearer {{token}}
+
+### Get User Stats (Replace token)
+GET {{baseUrl}}/api/user/stats
+Authorization: Bearer {{token}}
+
+### Get User Payments (Replace token)
+GET {{baseUrl}}/api/user/payments
+Authorization: Bearer {{token}}
+
+### Get Admin Bookings (Admin token required)
+GET {{baseUrl}}/api/admin/bookings
+Authorization: Bearer {{token}}
+
+### Get Admin Stats (Admin token required)
+GET {{baseUrl}}/api/admin/stats
+Authorization: Bearer {{token}}
+
+### Get Admin Feedback (Admin token required)
+GET {{baseUrl}}/api/admin/feedback
+Authorization: Bearer {{token}}
