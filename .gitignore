@@ -22,10 +22,11 @@ npm-debug.log*
 .DS_Store
 Thumbs.db
 
-# Hide all documentation except README.md and PROJECT_DOCUMENTATION.md
+# Hide all documentation except README.md, PROJECT_DOCUMENTATION.md, and API_DOCUMENTATION.md
 *.md
 !README.md
 !PROJECT_DOCUMENTATION.md
+!API_DOCUMENTATION.md
 
 # Utility scripts (keep local, don't commit)
 *.ps1
