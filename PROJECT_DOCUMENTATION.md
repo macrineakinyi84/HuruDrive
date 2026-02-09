@@ -2704,6 +2704,27 @@ fetch(`/api/vehicles/${id}`)
 - Proxy setup for `/images` static files
 - Development server configuration
 
+### 6.2.9 Frontend Code Documentation and Screenshots
+
+A dedicated document **`FRONTEND_CODE_DOCUMENTATION.md`** in the project root provides:
+
+- **Code snippets and line numbers** for taking screenshots of the following pages/components:
+  1. **Landing Page** (`src/pages/Home.jsx`) – state, search handler, layout
+  2. **Header** (`src/components/Header.jsx`) – auth check, logout, conditional nav (Login/Register vs Dashboard/Logout)
+  3. **Sign Up** (`src/pages/Register.jsx`) – validation and `POST /api/auth/register`
+  4. **Sign In** (`src/pages/Login.jsx`) – `POST /api/auth/login` and token storage
+  5. **Car Listing** (`src/components/CarsGrid.jsx`, `CarCard.jsx`) – fetch with filters, image fallback
+  6. **Payment** (`src/components/PaymentModal.jsx`) – create booking then `POST /api/payments`
+  7. **Admin Dashboard** (`src/pages/AdminDashboard.jsx`) – auth/role check, stats and tabs
+  8. **Vehicle Details** (`src/pages/VehicleDetails.jsx`) – fetch by ID, image handling (recommended)
+  9. **User Dashboard** (`src/pages/UserDashboard.jsx`) – auth, stats, bookings, payments (recommended)
+
+- **Instructions for taking code screenshots** (e.g. VS Code selection, Snipping Tool, or extensions like Polacode/Code Screenshot).
+- **Suggested UI screenshots** for each page (e.g. homepage, header, login form, car grid, payment modal, admin and user dashboards, vehicle details).
+- A **screenshot checklist table** for the report (file, suggested lines, UI screenshot).
+
+Use `FRONTEND_CODE_DOCUMENTATION.md` when preparing the Implementation chapter and figures: copy the relevant code snippets into your report and insert the screenshots where indicated.
+
 ---
 
 ## 6.3 Backend Implementation
@@ -3146,6 +3167,33 @@ function buildVehicleFilters(query) {
 - Responsive email templates
 - Error handling (non-critical)
 - Async notification sending
+
+### 6.3.9 Backend and Database Code Documentation and Screenshots
+
+A dedicated document **`BACKEND_CODE_DOCUMENTATION.md`** in the project root provides:
+
+- **Database (Prisma schema):**
+  1. **Datasource and generator** (`prisma/schema.prisma` lines 1–8) – PostgreSQL connection and client generation
+  2. **User, Vehicle, VehicleImage models** (lines 57–96) – core entities and relations
+  3. **Booking, Payment, Feedback models** (lines 10–55) – booking flow and feedback
+  4. **Enums** (lines 98–127) – BookingStatus, PaymentStatus, UserRole, VehicleStatus, FeedbackStatus
+
+- **Server (server.js):**
+  5. **Server setup and health check** (lines 1–64) – Express, CORS, Prisma, static files, `GET /api/health`
+  6. **Vehicle filters and GET /api/vehicles** (lines 66–136) – `buildVehicleFilters`, vehicle list with images
+  7. **Register and Login** (lines 273–374) – `POST /api/auth/register`, `POST /api/auth/login`, JWT and bcrypt
+  8. **Auth middleware** (lines 410–433) – `authenticateToken`, `requireAdmin`
+  9. **Create booking** (lines 438–527) – `POST /api/bookings`, price calculation, Prisma create
+  10. **Create payment** (lines 530–634) – `POST /api/payments`, duplicate check, booking update
+  11. **Admin stats** (lines 714–810) – `GET /api/admin/stats`, aggregates and date filters
+  12. **Error handling and server listen** (lines 1221–1268) – global error handler, graceful shutdown, PORT
+
+- **Instructions for taking code screenshots** (VS Code, Snipping Tool, or extensions).
+- **Line-by-line explanations** for each snippet (tables in the document).
+- **Suggested UI screenshots** (e.g. Prisma Studio, Postman requests/responses, terminal server start).
+- A **screenshot checklist table** for the report (file, suggested lines, UI screenshot).
+
+Use `BACKEND_CODE_DOCUMENTATION.md` together with `FRONTEND_CODE_DOCUMENTATION.md` when preparing the Implementation chapter: copy the relevant code snippets, add the line-by-line explanations, and insert the screenshots where indicated.
 
 ---
 

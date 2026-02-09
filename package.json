@@ -9,13 +9,18 @@
     "build": "vite build",
     "preview": "vite preview",
     "start": "node server.js",
-    "prisma:studio": "prisma studio",
+    "prisma:studio": "prisma studio --port 5556",
+    "prisma:studio:alt": "prisma studio --port 5557",
+    "prisma:studio:default": "prisma studio",
+    "fix:prisma": "powershell -ExecutionPolicy Bypass -File fix-prisma-studio.ps1",
     "prisma:migrate": "prisma migrate dev --name init",
     "prisma:generate": "prisma generate",
     "prisma:seed": "node prisma/seed.js",
     "check-admin-password": "node check-password.js",
     "update-admin-password": "node update-password.js",
-    "test:notifications": "node test-notifications.js"
+    "test:notifications": "node test-notifications.js",
+    "test:api": "node test-api-endpoints.js",
+    "test:scalability": "node test-scalability-performance.js"
   },
   "dependencies": {
     "@prisma/client": "^5.8.0",
@@ -24,11 +29,13 @@
     "dotenv": "^16.1.4",
     "express": "^4.18.2",
     "jsonwebtoken": "^9.0.0",
+    "leaflet": "^1.9.4",
     "multer": "^2.0.2",
     "nodemailer": "^7.0.12",
     "prisma": "^5.8.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "react-leaflet": "^4.2.1",
     "react-router-dom": "^7.12.0"
   },
   "devDependencies": {

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import { apiUrl } from '../config';
 
 export default function UserDashboard() {
   const navigate = useNavigate();
@@ -40,7 +41,7 @@ export default function UserDashboard() {
     }
 
     try {
-      const response = await fetch('/api/auth/me', {
+      const response = await fetch(apiUrl('/api/auth/me'), {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
@@ -56,7 +57,7 @@ export default function UserDashboard() {
   const fetchStats = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/user/stats', {
+      const response = await fetch(apiUrl('/api/user/stats', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (!response.ok) throw new Error('Failed to fetch stats');
@@ -72,7 +73,7 @@ export default function UserDashboard() {
   const fetchBookings = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/user/bookings', {
+      const response = await fetch(apiUrl('/api/user/bookings'), {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (!response.ok) throw new Error('Failed to fetch bookings');
@@ -86,7 +87,7 @@ export default function UserDashboard() {
   const fetchPayments = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/user/payments', {
+      const response = await fetch(apiUrl('/api/user/payments', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (!response.ok) throw new Error('Failed to fetch payments');
@@ -100,7 +101,7 @@ export default function UserDashboard() {
   const fetchFeedbacks = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/user/feedback', {
+      const response = await fetch(apiUrl('/api/user/feedback'), {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (!response.ok) throw new Error('Failed to fetch feedback');
@@ -116,7 +117,7 @@ export default function UserDashboard() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`/api/user/bookings/${bookingId}/cancel`, {
+      const response = await fetch(apiUrl(`/api/user/bookings/${bookingId}/cancel`), {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -138,7 +139,7 @@ export default function UserDashboard() {
     e.preventDefault();
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/user/profile', {
+      const response = await fetch(apiUrl('/api/user/profile'), {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -166,7 +167,7 @@ export default function UserDashboard() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/user/password', {
+      const response = await fetch(apiUrl('/api/user/password', {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -195,7 +196,7 @@ export default function UserDashboard() {
   const submitFeedback = async (bookingId, rating, comment) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/feedback', {
+      const response = await fetch(apiUrl('/api/feedback'), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

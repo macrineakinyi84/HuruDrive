@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import { apiUrl } from '../config';
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -36,7 +37,7 @@ export default function AdminDashboard() {
     }
 
     try {
-      const response = await fetch('/api/auth/me', {
+      const response = await fetch(apiUrl('/api/auth/me'), {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -67,7 +68,7 @@ export default function AdminDashboard() {
       if (dateRange.startDate) params.append('startDate', dateRange.startDate);
       if (dateRange.endDate) params.append('endDate', dateRange.endDate);
 
-      const response = await fetch(`/api/admin/stats?${params.toString()}`, {
+      const response = await fetch(apiUrl(`/api/admin/stats?${params.toString()}`), {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -107,7 +108,7 @@ export default function AdminDashboard() {
   const fetchFeedbacks = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/admin/feedback', {
+      const response = await fetch(apiUrl('/api/admin/feedback'), {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -124,7 +125,7 @@ export default function AdminDashboard() {
   const updateBookingStatus = async (bookingId, newStatus) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`/api/admin/bookings/${bookingId}`, {
+      const response = await fetch(apiUrl(`/api/admin/bookings/${bookingId}`), {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -145,7 +146,7 @@ export default function AdminDashboard() {
   const updateFeedbackStatus = async (feedbackId, newStatus) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`/api/admin/feedback/${feedbackId}`, {
+      const response = await fetch(apiUrl(`/api/admin/feedback/${feedbackId}`), {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,

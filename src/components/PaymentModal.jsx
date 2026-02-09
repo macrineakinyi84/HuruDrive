@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import LocationMap from './LocationMap';
 
 export default function PaymentModal({ isOpen, onClose, vehicle, bookingDetails, onPaymentSuccess }) {
   const [paymentMethod, setPaymentMethod] = useState('mpesa');
@@ -12,6 +13,9 @@ export default function PaymentModal({ isOpen, onClose, vehicle, bookingDetails,
   const [bankName, setBankName] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
+  const [pickupLocation, setPickupLocation] = useState('Nairobi CBD');
+  const [returnLocation, setReturnLocation] = useState('Nairobi CBD');
+  const [showLocationMap, setShowLocationMap] = useState(false);
 
   if (!isOpen) return null;
 
@@ -38,7 +42,7 @@ export default function PaymentModal({ isOpen, onClose, vehicle, bookingDetails,
 
       // First create a booking (if not already created)
       // For demo, we'll create a booking and then process payment
-      const bookingResponse = await fetch('/api/bookings', {
+      const bookingResponse = await fetch(apiUrl('/api/bookings'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -46,8 +50,8 @@ export default function PaymentModal({ isOpen, onClose, vehicle, bookingDetails,
         },
         body: JSON.stringify({
           vehicleId: vehicle?.id,
-          pickupLocation: 'Nairobi CBD',
-          returnLocation: 'Nairobi CBD',
+          pickupLocation: pickupLocation,
+          returnLocation: returnLocation,
           pickupAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // Tomorrow
           returnAt: new Date(Date.now() + (bookingDetails?.days || 3) * 24 * 60 * 60 * 1000).toISOString()
         })
@@ -61,7 +65,7 @@ export default function PaymentModal({ isOpen, onClose, vehicle, bookingDetails,
       const bookingId = bookingData.booking.id;
 
       // Process payment
-      const paymentResponse = await fetch('/api/payments', {
+      const paymentResponse = await fetch(apiUrl('/api/payments'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -152,6 +156,34 @@ export default function PaymentModal({ isOpen, onClose, vehicle, bookingDetails,
             </div>
           ) : (
             <>
+              {/* Pickup & return location */}
+              <div className="mb-4">
+                <h3 className="font-semibold text-gray-900 mb-2">Pickup & return location</h3>
+                <div className="flex flex-wrap gap-2 items-center">
+                  <input
+                    type="text"
+                    value={pickupLocation}
+                    onChange={(e) => setPickupLocation(e.target.value)}
+                    placeholder="Pickup location"
+                    className="flex-1 min-w-[120px] rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                  />
+                  <input
+                    type="text"
+                    value={returnLocation}
+                    onChange={(e) => setReturnLocation(e.target.value)}
+                    placeholder="Return location"
+                    className="flex-1 min-w-[120px] rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowLocationMap(true)}
+                    className="px-3 py-2 rounded-lg border border-teal-500 text-teal-700 hover:bg-teal-50 text-sm whitespace-nowrap"
+                  >
+                    📍 Choose on map
+                  </button>
+                </div>
+              </div>
+
               {/* Booking Summary */}
               <div className="bg-gray-50 rounded-lg p-4 mb-6">
                 <h3 className="font-semibold text-gray-900 mb-3">Booking Summary</h3>
@@ -457,6 +489,30 @@ export default function PaymentModal({ isOpen, onClose, vehicle, bookingDetails,
                   </div>
                 </div>
               </form>
+
+              {/* Location map modal */}
+              {showLocationMap && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] p-4" onClick={() => setShowLocationMap(false)}>
+                  <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full p-4 max-h-[90vh] overflow-auto" onClick={e => e.stopPropagation()}>
+                    <div className="flex justify-between items-center mb-3">
+                      <h3 className="text-lg font-semibold text-gray-800">Select pickup & return location</h3>
+                      <button type="button" onClick={() => setShowLocationMap(false)} className="text-gray-500 hover:text-gray-700 text-2xl leading-none">&times;</button>
+                    </div>
+                    <LocationMap
+                      center={[-1.2921, 36.8219]}
+                      zoom={6}
+                      height="320px"
+                      onLocationSelect={(result) => {
+                        const name = result.city + (result.city === 'Nairobi' ? ' CBD' : '');
+                        setPickupLocation(name);
+                        setReturnLocation(name);
+                        setShowLocationMap(false);
+                      }}
+                      showMyLocation={true}
+                    />
+                  </div>
+                </div>
+              )}
             </>
           )}
         </div>

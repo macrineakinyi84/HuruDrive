@@ -161,6 +161,24 @@
 							]
 						}
 					}
+				},
+				{
+					"name": "Get Vehicle Images",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/vehicle-images?vehicleId=bfa2e852-388c-48cb-9f4d-c54b5c2d8049",
+							"host": ["{{base_url}}"],
+							"path": ["api", "vehicle-images"],
+							"query": [
+								{
+									"key": "vehicleId",
+									"value": "bfa2e852-388c-48cb-9f4d-c54b5c2d8049"
+								}
+							]
+						}
+					}
 				}
 			]
 		},
@@ -294,9 +312,54 @@
 							}
 						],
 						"url": {
-							"raw": "{{base_url}}/api/admin/bookings",
+							"raw": "{{base_url}}/api/admin/bookings?status=PENDING&page=1&limit=10",
 							"host": ["{{base_url}}"],
-							"path": ["api", "admin", "bookings"]
+							"path": ["api", "admin", "bookings"],
+							"query": [
+								{
+									"key": "status",
+									"value": "PENDING"
+								},
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Update Booking Status",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"CONFIRMED\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/admin/bookings/:id",
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "bookings", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "713c8b76-c449-4a3d-9284-e39f66568e3b"
+								}
+							]
 						}
 					}
 				},
@@ -331,6 +394,185 @@
 							"raw": "{{base_url}}/api/admin/feedback",
 							"host": ["{{base_url}}"],
 							"path": ["api", "admin", "feedback"]
+						}
+					}
+				},
+				{
+					"name": "Update Feedback Status",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"APPROVED\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/admin/feedback/:id",
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "feedback", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "feedback-id-here"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "User Dashboard Extended",
+			"item": [
+				{
+					"name": "Get Booking Details",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/user/bookings/:id",
+							"host": ["{{base_url}}"],
+							"path": ["api", "user", "bookings", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "713c8b76-c449-4a3d-9284-e39f66568e3b"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Cancel Booking",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/user/bookings/:id/cancel",
+							"host": ["{{base_url}}"],
+							"path": ["api", "user", "bookings", ":id", "cancel"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "713c8b76-c449-4a3d-9284-e39f66568e3b"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Update Profile",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Updated Name\",\n  \"phone\": \"0712345678\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/user/profile",
+							"host": ["{{base_url}}"],
+							"path": ["api", "user", "profile"]
+						}
+					}
+				},
+				{
+					"name": "Change Password",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"currentPassword\": \"oldpassword123\",\n  \"newPassword\": \"newpassword123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/user/password",
+							"host": ["{{base_url}}"],
+							"path": ["api", "user", "password"]
+						}
+					}
+				},
+				{
+					"name": "Get User Feedback",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/user/feedback",
+							"host": ["{{base_url}}"],
+							"path": ["api", "user", "feedback"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Feedback",
+			"item": [
+				{
+					"name": "Create Feedback",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"bookingId\": \"713c8b76-c449-4a3d-9284-e39f66568e3b\",\n  \"rating\": 5,\n  \"comment\": \"Great service!\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/feedback",
+							"host": ["{{base_url}}"],
+							"path": ["api", "feedback"]
 						}
 					}
 				}

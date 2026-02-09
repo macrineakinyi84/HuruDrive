@@ -1,25 +1,17 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { API_BASE } from '../config'
 
 export default function CarCard({ vehicle }) {
   const navigate = useNavigate();
   const [imageError, setImageError] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   
-  // Get the first image from the images array, or use a placeholder
-  // Handle both local paths and full URLs
   const getImageUrl = (url) => {
     if (!url) return 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=800&h=600&fit=crop&auto=format&q=80';
-    // If it's already a full URL (like unsplash.com), use it directly
-    if (url.startsWith('http://') || url.startsWith('https://')) {
-      return url;
-    }
-    // If it's a local path starting with /images, use it directly (Vite proxy handles it)
-    if (url.startsWith('/images')) {
-      return url;
-    }
-    // Default: assume it's a relative path, prepend /images
-    return `/images${url}`;
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    const path = url.startsWith('/images') ? url : `/images${url}`;
+    return API_BASE ? `${API_BASE}${path}` : path;
   };
 
   // Get all available images

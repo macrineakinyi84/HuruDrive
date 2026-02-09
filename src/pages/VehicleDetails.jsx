@@ -4,6 +4,7 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import PaymentModal from '../components/PaymentModal';
 import Notification from '../components/Notification';
+import { apiUrl, API_BASE } from '../config';
 
 export default function VehicleDetails() {
   const { id } = useParams();
@@ -15,7 +16,7 @@ export default function VehicleDetails() {
   const [notification, setNotification] = useState(null);
 
   useEffect(() => {
-    fetch(`/api/vehicles/${id}`)
+    fetch(apiUrl(`/api/vehicles/${id}`))
       .then((r) => {
         if (!r.ok) throw new Error('Vehicle not found');
         return r.json();
@@ -35,10 +36,8 @@ export default function VehicleDetails() {
     if (url.startsWith('http://') || url.startsWith('https://')) {
       return url;
     }
-    if (url.startsWith('/images')) {
-      return url;
-    }
-    return `/images${url}`;
+    const path = url.startsWith('/images') ? url : `/images${url}`;
+    return API_BASE ? `${API_BASE}${path}` : path;
   };
 
   if (loading) {

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import CarCard from './CarCard';
+import { apiUrl } from '../config';
 
 export default function CarsGrid({ filters = {} }) {
   const [vehicles, setVehicles] = useState([]);
@@ -20,7 +21,7 @@ export default function CarsGrid({ filters = {} }) {
     if (filters.maxPrice) params.append('maxPrice', filters.maxPrice);
 
     const queryString = params.toString();
-    const url = `/api/vehicles${queryString ? `?${queryString}` : ''}`;
+    const url = apiUrl(`/api/vehicles${queryString ? `?${queryString}` : ''}`);
 
     fetch(url)
       .then((r) => {

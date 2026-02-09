@@ -293,11 +293,13 @@ app.post('/api/auth/register', async (req, res) => {
     // Create user
     const user = await prisma.user.create({
       data: {
+        id: require('crypto').randomUUID(),
         name: name || null,
         email,
         phone: phone || null,
         passwordHash,
-        role: 'USER'
+        role: 'USER',
+        updatedAt: new Date()
       }
     });
 
@@ -652,13 +654,13 @@ app.get('/api/admin/bookings', authenticateToken, requireAdmin, async (req, res)
       prisma.booking.findMany({
         where,
         include: {
-          user: {
+          User: {
             select: { id: true, name: true, email: true, phone: true }
           },
-          vehicle: {
+          Vehicle: {
             select: { id: true, title: true, make: true, model: true }
           },
-          payment: true
+          Payment: true
         },
         orderBy: { createdAt: 'desc' },
         skip,
@@ -696,8 +698,8 @@ app.patch('/api/admin/bookings/:id', authenticateToken, requireAdmin, async (req
       where: { id },
       data: { status },
       include: {
-        user: true,
-        vehicle: true
+        User: true,
+        Vehicle: true
       }
     });
 
@@ -868,8 +870,8 @@ app.patch('/api/admin/feedback/:id', authenticateToken, requireAdmin, async (req
       where: { id },
       data: { status },
       include: {
-        user: true,
-        booking: true
+        User: true,
+        Booking: true
       }
     });
 
@@ -915,12 +917,12 @@ app.post('/api/feedback', authenticateToken, async (req, res) => {
         status: 'PENDING'
       },
       include: {
-        user: {
+        User: {
           select: { id: true, name: true, email: true }
         },
-        booking: {
+        Booking: {
           include: {
-            vehicle: {
+            Vehicle: {
               select: { id: true, title: true }
             }
           }
@@ -1198,9 +1200,9 @@ app.get('/api/user/feedback', authenticateToken, async (req, res) => {
     const feedbacks = await prisma.feedback.findMany({
       where: { userId: req.user.userId },
       include: {
-        booking: {
+        Booking: {
           include: {
-            vehicle: {
+            Vehicle: {
               select: { id: true, title: true }
             }
           }
@@ -1216,5 +1218,51 @@ app.get('/api/user/feedback', authenticateToken, async (req, res) => {
   }
 });
 
+// Global error handler middleware (must be after all routes)
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', err);
+  res.status(500).json({ 
+    error: 'Internal server error',
+    message: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong'
+  });
+});
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+  // Gracefully shutdown
+  prisma.$disconnect().then(() => {
+    process.exit(1);
+  });
+});
+
+// Graceful shutdown
+process.on('SIGTERM', async () => {
+  console.log('SIGTERM received, shutting down gracefully...');
+  await prisma.$disconnect();
+  process.exit(0);
+});
+
+process.on('SIGINT', async () => {
+  console.log('SIGINT received, shutting down gracefully...');
+  await prisma.$disconnect();
+  process.exit(0);
+});
+
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`API listening on http://localhost:${PORT}`));
+app.listen(PORT, () => {
+  console.log(`API listening on http://localhost:${PORT}`);
+  console.log(`Health check: http://localhost:${PORT}/api/health`);
+}).on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`Port ${PORT} is already in use. Please stop the other process or use a different port.`);
+  } else {
+    console.error('Server error:', err);
+  }
+  process.exit(1);
+});
