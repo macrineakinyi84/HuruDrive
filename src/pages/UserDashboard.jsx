@@ -57,8 +57,9 @@ export default function UserDashboard() {
   const fetchStats = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(apiUrl('/api/user/stats', {
-        headers: { 'Authorization': `Bearer ${token}` }
+      const url = apiUrl('/api/user/stats');
+      const response = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}` }
       });
       if (!response.ok) throw new Error('Failed to fetch stats');
       const data = await response.json();
@@ -87,7 +88,7 @@ export default function UserDashboard() {
   const fetchPayments = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(apiUrl('/api/user/payments', {
+      const response = await fetch(apiUrl('/api/user/payments'), {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (!response.ok) throw new Error('Failed to fetch payments');
@@ -167,7 +168,7 @@ export default function UserDashboard() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(apiUrl('/api/user/password', {
+      const response = await fetch(apiUrl('/api/user/password'), {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,

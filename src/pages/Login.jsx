@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import Footer from '../components/Footer';
+import { apiUrl } from '../config';
 
 export default function Login() {
   const navigate = useNavigate();
