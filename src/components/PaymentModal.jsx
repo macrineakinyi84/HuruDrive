@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import LocationMap from './LocationMap';
+import { apiUrl } from '../config';
 
 export default function PaymentModal({ isOpen, onClose, vehicle, bookingDetails, onPaymentSuccess }) {
   const [paymentMethod, setPaymentMethod] = useState('mpesa');
