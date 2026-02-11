@@ -1,6 +1,12 @@
 import React, { useState } from 'react';
 import LocationMap from './LocationMap';
-import { apiUrl } from '../config';
+
+// Build API URL (avoids dependency on config module for payment flow)
+const API_BASE = typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL : '';
+function getApiUrl(path) {
+  const p = path.startsWith('/') ? path : `/${path}`;
+  return `${API_BASE}${p}`;
+}
 
 export default function PaymentModal({ isOpen, onClose, vehicle, bookingDetails, onPaymentSuccess }) {
   const [paymentMethod, setPaymentMethod] = useState('mpesa');
@@ -43,7 +49,7 @@ export default function PaymentModal({ isOpen, onClose, vehicle, bookingDetails,
 
       // First create a booking (if not already created)
       // For demo, we'll create a booking and then process payment
-      const bookingResponse = await fetch(apiUrl('/api/bookings'), {
+      const bookingResponse = await fetch(getApiUrl('/api/bookings'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -66,7 +72,7 @@ export default function PaymentModal({ isOpen, onClose, vehicle, bookingDetails,
       const bookingId = bookingData.booking.id;
 
       // Process payment
-      const paymentResponse = await fetch(apiUrl('/api/payments'), {
+      const paymentResponse = await fetch(getApiUrl('/api/payments'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

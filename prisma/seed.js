@@ -1,25 +1,32 @@
 const { PrismaClient } = require('@prisma/client');
+const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const prisma = new PrismaClient();
 
 async function main() {
-  // Upsert admin user
+  const adminPasswordHash = await bcrypt.hash('admin123', 10);
+  const now = new Date();
+
+  // Upsert admin user (login: admin@example.com / admin123)
   const admin = await prisma.user.upsert({
     where: { email: 'admin@example.com' },
     update: {
       name: 'Admin',
       phone: '0700000000',
-      passwordHash: 'changeme', // placeholder — replace with a real hash for production
+      passwordHash: adminPasswordHash,
       role: 'ADMIN'
     },
     create: {
+      id: crypto.randomUUID(),
       name: 'Admin',
       email: 'admin@example.com',
       phone: '0700000000',
-      passwordHash: 'changeme', // placeholder
-      role: 'ADMIN'
+      passwordHash: adminPasswordHash,
+      role: 'ADMIN',
+      updatedAt: now
     }
   });
-  console.log('Admin user:', { id: admin.id, email: admin.email });
+  console.log('Admin user:', { id: admin.id, email: admin.email }, '(password: admin123)');
 
   // Create sample vehicles - 10 diverse vehicles
   const vehicles = [
@@ -193,11 +200,18 @@ async function main() {
   let firstVehicleId = null;
   for (const vehicleData of vehicles) {
     const { images, ...vehicleInfo } = vehicleData;
+    const vehicleId = crypto.randomUUID();
     const vehicle = await prisma.vehicle.create({
       data: {
+        id: vehicleId,
         ...vehicleInfo,
-        images: {
-          create: images
+        updatedAt: now,
+        VehicleImage: {
+          create: images.map((img, i) => ({
+            id: crypto.randomUUID(),
+            url: img.url,
+            order: img.order ?? i
+          }))
         }
       }
     });
@@ -213,6 +227,7 @@ async function main() {
     const returnAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // +1 day
     const booking = await prisma.booking.create({
       data: {
+        id: crypto.randomUUID(),
         userId: admin.id,
         vehicleId: firstVehicleId,
         pickupLocation: 'Nairobi CBD',
@@ -221,7 +236,8 @@ async function main() {
         returnAt,
         totalPrice: 15000,
         status: 'PENDING',
-        paymentStatus: 'PENDING'
+        paymentStatus: 'PENDING',
+        updatedAt: now
       }
     });
     console.log('Created booking:', { id: booking.id, userId: booking.userId, vehicleId: booking.vehicleId });
@@ -230,6 +246,7 @@ async function main() {
   // Create a payment placeholder
   await prisma.payment.create({
     data: {
+      id: crypto.randomUUID(),
       userId: admin.id,
       provider: 'stripe',
       amount: 3000,
