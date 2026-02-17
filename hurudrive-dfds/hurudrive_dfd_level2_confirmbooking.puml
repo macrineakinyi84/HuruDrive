@@ -1,0 +1,57 @@
+@startuml
+title HuruDrive Vehicle Rental System – DFD Level 2 (Decompose 2.1 Confirm Booking)
+
+left to right direction
+
+actor Customer
+actor "Payment Gateway" as PG
+
+' Processes inside Confirm Booking (2.1)
+rectangle "2.1.1 Verify Customer Account" as P211
+rectangle "2.1.2 Reserve Vehicle (Hold)" as P212
+rectangle "2.1.3 Generate Booking Record" as P213
+rectangle "2.1.4 Send Confirmation" as P214
+
+' Supporting processes (interactions)
+rectangle "3.1 Initiate Payment" as P31
+rectangle "3.2 External Payment Gateway" as P32
+
+' Data stores
+database "D3 Customer Records" as D3
+database "D1 Vehicle Inventory" as D1
+database "D2 Booking Records"   as D2
+database "D4 Payment Records"   as D4
+
+' Flow: incoming tentative booking (from Level 1 P13)
+' 2.1.1 Verify Customer
+P211 --> D3 : lookup/verify customer
+D3 --> P211 : customer status
+P211 --> P212 : verified customer info
+
+' 2.1.2 Reserve Vehicle (soft hold)
+P212 --> D1 : place hold on vehicle
+D1 --> P212 : hold confirmation
+P212 --> P213 : hold confirmed
+
+' 2.1.3 Generate Booking Record
+P213 --> D2 : create confirmed booking
+D2 --> P213 : booking reference
+
+' Payment interaction (pre-authorization or payment)
+P213 --> P31 : request payment (if required)
+P31 --> P32 : send payment to gateway
+P32 --> PG : external authorization
+PG --> P32 : authorization result
+P32 --> P31 : payment success/failure
+P31 --> D4 : record payment outcome
+
+' 2.1.4 Send Confirmation
+P213 --> P214 : booking details
+P214 --> Customer : booking confirmation\nbooking ref
+P214 --> D2 : update booking status (confirmed)
+
+' Error/exception flows
+P31 --> P213 : payment failed (return to tentative)
+P213 --> D1 : release hold (on failure)
+
+@enduml
