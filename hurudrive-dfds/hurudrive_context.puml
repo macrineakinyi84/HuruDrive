@@ -1,12 +1,5 @@
 @startuml
-package "HuruDrive Context" {
-
-:User;
-:System;
-:External Systems;
-
-User -> System : interacts;
-System -> External Systems : communicates;
-
+!define RECTANGLE class
+RECTANGLE "Context" {
 }
 @enduml
