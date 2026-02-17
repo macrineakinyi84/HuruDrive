@@ -1,0 +1,21 @@
+@startuml
+title HuruDrive Vehicle Rental System – Context Diagram (DFD Context)
+
+left to right direction
+
+actor Customer
+actor Admin
+actor "Payment Gateway" as PG
+
+rectangle "0.0 HuruDrive Rental Platform" as System
+
+Customer --> System : Vehicle search request\nBooking details\nPayment initiation
+System --> Customer : Vehicle listings\nBooking confirmation\nReceipt
+
+Admin --> System : Vehicle data updates\nReport requests
+System --> Admin : Booking reports\nSystem statistics
+
+System --> PG : Payment request
+PG --> System : Payment confirmation
+
+@enduml
