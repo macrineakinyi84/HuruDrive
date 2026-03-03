@@ -1,150 +1,60 @@
-﻿# HuruDrive - Car Rental System
+# AI Content Idea Generator (Frontend Only)
 
-## Abstract
+This project is a frontend-only web application that helps social media creators generate high-performing content ideas using:
 
-HuruDrive is a modern, full-stack web application for car rental management, designed to simplify the process of browsing, booking, and managing vehicle rentals in Kenya. The system provides a seamless user experience for customers to discover available vehicles, view detailed specifications, and make reservations, while offering administrators robust tools for fleet management.
+- **Rule-based idea generation**
+- **Platform-specific strategy matching**
+- **Audience and goal relevance scoring**
+- **Preference learning from user feedback (localStorage)**
 
-Built with a React frontend and Node.js/Express backend, HuruDrive leverages Prisma ORM with PostgreSQL for reliable data management. The application features a responsive, mobile-first design using Tailwind CSS, ensuring accessibility across all devices. Key functionalities include real-time vehicle availability filtering, comprehensive search capabilities by location, price range, and vehicle specifications, and an intuitive booking interface.
+No backend APIs are required for core functionality.
 
-The system architecture emphasizes simplicity, reliability, and maintainability, making it easy for developers to extend and customize. With a clean separation between frontend and backend, RESTful API design, and type-safe database schemas, HuruDrive serves as a solid foundation for scaling a car rental business.
+## Why this project
+
+Consistently producing creative, relevant content is difficult when brainstorming manually. This app solves that by providing an adaptive idea engine that:
+
+1. Accepts creator input (platform, niche, audience, goal, effort).
+2. Generates ranked ideas tailored to those parameters.
+3. Learns what the user likes/dislikes over time.
+4. Improves future ranking based on local feedback.
 
 ## Features
 
-- **Vehicle Browsing**: Browse available vehicles with high-quality images and detailed specifications
-- **Advanced Filtering**: Filter by location, make, category, price range, and seating capacity
-- **Responsive Design**: Mobile-first UI that works seamlessly on all devices
-- **Real-time Availability**: Only shows vehicles currently available for rent
-- **Booking Management**: Complete booking system with payment tracking
-- **User Authentication**: Secure registration and login with JWT
-- **Payment Processing**: Multiple payment methods (M-Pesa, Airtel Money, Card, Bank Transfer)
-- **Email & SMS Notifications**: Automated booking and payment confirmations
+- **User-friendly interface** for structured content input.
+- **Platform-specific outputs** for Instagram, TikTok, YouTube, LinkedIn, X, and Facebook.
+- **Rule-based AI logic** with predefined templates, angles, and strategies.
+- **Scoring model** based on:
+  - goal fit
+  - audience suitability
+  - effort suitability
+  - platform format fit
+  - preference boost
+- **Feedback learning** with "Helpful" / "Not for me" actions.
+- **Persistent learning** via browser localStorage.
+- **Regenerate variations** for fresh idea sets.
 
-## Tech Stack
+## Tech stack
 
-- **Frontend**: React 18, Vite, Tailwind CSS, React Router
-- **Backend**: Node.js, Express.js
-- **Database**: PostgreSQL with Prisma ORM
-- **Authentication**: JWT (JSON Web Tokens)
-- **Password Security**: bcrypt
-- **File Upload**: Multer
-- **Notifications**: Nodemailer (Email), SMS services
+- React + Vite
+- Tailwind CSS
+- Browser localStorage
 
-## Getting Started
+## Run locally
 
-### Prerequisites
-
-- Node.js (v20.19.0 or >=22.12.0 recommended)
-- PostgreSQL database
-- npm or yarn
-
-### Installation
-
-1. Clone the repository
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-3. Set up environment variables:
-   Create a `.env` file in the root directory:
-   ```env
-   DATABASE_URL="postgresql://user:password@localhost:5432/hurudrive"
-   PORT=3000
-   JWT_SECRET="your-secret-key-here"
-   ```
-
-4. Set up the database:
-   ```bash
-   npx prisma generate
-   npx prisma migrate dev
-   npm run prisma:seed
-   ```
-
-5. Start the development server:
-   ```bash
-   npm run dev
-   ```
-
-   This starts both the backend API (port 3000) and frontend dev server (port 5173).
-
-### Available Scripts
-
-- `npm run dev` - Start both backend and frontend in development mode
-- `npm run build` - Build the frontend for production
-- `npm run start` - Start the backend server only
-- `npm run prisma:studio` - Open Prisma Studio to view/edit database
-- `npm run prisma:migrate` - Run database migrations
-- `npm run prisma:generate` - Generate Prisma client
-- `npm run prisma:seed` - Seed database with sample data
-- `npm run test:notifications` - Test email and SMS notifications
-
-## Project Structure
-
-```
-HuruDrive/
-├── src/                    # Frontend React application
-│   ├── components/         # React components
-│   │   ├── Header.jsx     # Navigation header
-│   │   ├── Footer.jsx     # Footer component
-│   │   ├── Hero.jsx       # Hero section with search
-│   │   ├── CarsGrid.jsx   # Vehicle listing grid
-│   │   ├── CarCard.jsx    # Individual vehicle card
-│   │   ├── PaymentModal.jsx # Payment modal
-│   │   └── Notification.jsx # Toast notifications
-│   ├── pages/             # Page components
-│   │   ├── Home.jsx       # Homepage
-│   │   ├── VehicleDetails.jsx # Vehicle details page
-│   │   ├── Login.jsx     # Login page
-│   │   └── Register.jsx  # Registration page
-│   ├── App.jsx            # Main app component
-│   └── main.jsx           # React entry point
-├── prisma/                # Database schema and migrations
-│   ├── schema.prisma      # Prisma schema definition
-│   └── seed.js            # Database seeding script
-├── services/              # Business logic services
-│   └── notificationService.js # Email/SMS service
-├── public/                # Static assets
-│   └── images/            # Vehicle images
-├── server.js              # Express backend server
-├── package.json           # Dependencies and scripts
-├── vite.config.mjs        # Vite configuration
-└── tailwind.config.js     # Tailwind CSS configuration
+```bash
+npm install
+npm run dev
 ```
 
-## API Endpoints
+Then open the Vite URL shown in your terminal.
 
-### Vehicle Endpoints
-- `GET /api/vehicles` - List all available vehicles (with optional filters)
-- `GET /api/vehicles/:id` - Get a specific vehicle by ID
-- `POST /api/vehicles/:id/images` - Upload vehicle image (authenticated)
-- `DELETE /api/vehicle-images/:id` - Delete vehicle image (authenticated)
+## Build
 
-### Authentication Endpoints
-- `POST /api/auth/register` - Register new user
-- `POST /api/auth/login` - Login user
-- `GET /api/auth/me` - Get current user (authenticated)
+```bash
+npm run build
+```
 
-### Booking Endpoints
-- `POST /api/bookings` - Create new booking (authenticated)
+## Notes
 
-### Payment Endpoints
-- `POST /api/payments` - Process payment (authenticated)
-
-### Query Parameters for `/api/vehicles`
-- `location` - Filter by location (e.g., `?location=Nairobi`)
-- `make` - Filter by manufacturer (e.g., `?make=Toyota`)
-- `category` - Filter by category (e.g., `?category=Sedan`)
-- `minSeats` - Minimum number of seats (e.g., `?minSeats=5`)
-- `minPrice` - Minimum daily price (e.g., `?minPrice=2000`)
-- `maxPrice` - Maximum daily price (e.g., `?maxPrice=5000`)
-- `includeUnavailable` - Include unavailable vehicles (e.g., `?includeUnavailable=1`)
-
-## Documentation
-
-- **Project Documentation**: Complete academic documentation (Chapters 1-8) 
-
-
-## License
-
-This project is private and proprietary.
-
+- Learning data is stored only in the current browser profile.
+- Use **Reset learning** in the UI to clear stored preference signals.
